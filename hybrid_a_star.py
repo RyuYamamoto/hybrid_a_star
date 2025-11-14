@@ -67,22 +67,13 @@ class HybridAStar:
         if neighbor_key in closed:
           continue
 
-        # if g_score.get(neighbor_key, math.inf) <= neighbor.g:
-        #   continue
-
-        tentative_g = neighbor.g
-        if tentative_g >= g_score.get(neighbor_key, math.inf):
+        if g_score.get(neighbor_key, math.inf) <= neighbor.g:
           continue
 
         neighbor.cost((goal_pose[0], goal_pose[1]))
-        g_score[neighbor_key] = tentative_g
-        count += 1
+        g_score[neighbor_key] = neighbor.g
+        count+=1
         heappush(open_list, (neighbor.f, neighbor.h, count, neighbor))
-
-        # neighbor.cost((goal_pose[0], goal_pose[1]))
-        # g_score[neighbor_key] = neighbor.g
-        # count+=1
-        # heappush(open_list, (neighbor.f, neighbor.h, count, neighbor))
 
     return False
 
