@@ -34,21 +34,17 @@ class CollisionChecker:
     if self._map is None or self._footprint is None:
         return False
 
-    # FootPrint インスタンス想定
     fp = self._footprint
     half_len = fp.length / 2.0
     half_wid = fp.width / 2.0
 
-    # --- 1. footprint の4頂点を world に変換して bbox を取る（ここは今まで通り） ---
-    # transform_footprint は「ロボット座標系の頂点列 → world座標系の頂点列」に変換する関数
-    transformed_world = transform_footprint(footprint=fp, pose=pose)  # [(wx, wy), ...]
+    transformed_world = transform_footprint(footprint=fp, pose=pose)
 
     xs = [p[0] for p in transformed_world]
     ys = [p[1] for p in transformed_world]
     min_wx, max_wx = min(xs), max(xs)
     min_wy, max_wy = min(ys), max(ys)
 
-    # --- 2. world bbox を grid bbox に変換 ---
     res = self._map.resolution
     ox  = self._map.origin.x
     oy  = self._map.origin.y
@@ -63,15 +59,11 @@ class CollisionChecker:
     max_gx = min(max_gx, self._map.width  - 1)
     max_gy = min(max_gy, self._map.height - 1)
 
-    # --- 3. ループ前に色々ローカルに束縛して関数呼び出しを減らす ---
     get_cost = self._map.get_cost
     px, py, yaw = pose
     cos_yaw = math.cos(yaw)
     sin_yaw = math.sin(yaw)
-
-    # --- 4. bbox 内のセルを走査し、セル中心をロボット座標系に逆変換して判定 ---
     for gy in range(min_gy, max_gy + 1):
-      # セル中心の world.y を先に計算しておく
       wy = oy + (gy + 0.5) * res
       dy = wy - py
 
@@ -79,16 +71,12 @@ class CollisionChecker:
         wx = ox + (gx + 0.5) * res
         dx = wx - px
 
-        # world → ロボット座標系への変換
-        # [x_r, y_r]^T = R(-yaw) * ([wx, wy]^T - [px, py]^T)
+
         x_r =  cos_yaw * dx + sin_yaw * dy
         y_r = -sin_yaw * dx + cos_yaw * dy
 
-        # 長方形フットプリント内か？
         if (abs(x_r) > half_len) or (abs(y_r) > half_wid):
           continue
-
-        # 内側ならコストチェック
         cost = get_cost(gx, gy)
         if cost is not None and cost_threshold <= cost:
           return True
